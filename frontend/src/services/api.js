@@ -1,12 +1,38 @@
-/**
+﻿/**
  * API Service Client for Sentinel Dashboard
  * Handles all REST endpoints with timeout, error handling and base URL configuration.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+export let API_BASE = '';
+export let API_CONFIG_ERROR = null;
+
+if (!configuredApiUrl && import.meta.env.PROD) {
+  API_CONFIG_ERROR = 'VITE_API_URL is missing. Set it to the deployed backend origin in Vercel and redeploy.';
+} else if (configuredApiUrl) {
+  try {
+    const backendUrl = new URL(configuredApiUrl);
+    if (!['http:', 'https:'].includes(backendUrl.protocol) || !['', '/'].includes(backendUrl.pathname) || backendUrl.search || backendUrl.hash) {
+      throw new Error('VITE_API_URL must be a backend origin only, without a path, query, or fragment.');
+    }
+    API_BASE = backendUrl.origin;
+  } catch (error) {
+    API_CONFIG_ERROR = `Invalid VITE_API_URL: ${error.message}`;
+  }
+}
+
+export function getApiUrl(endpoint) {
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return API_BASE ? `${API_BASE}${path}` : path;
+}
 
 async function fetchJson(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
+  if (API_CONFIG_ERROR) {
+    console.error(`[API Configuration] ${API_CONFIG_ERROR}`);
+    return { ok: false, error: API_CONFIG_ERROR };
+  }
+
+  const url = getApiUrl(endpoint);
   const defaultHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -37,7 +63,7 @@ export const apiService = {
   // Request Logs & Analytics
   getRequests: (params = {}) => {
     const query = new URLSearchParams(params).toString();
-    return fetchJson(`/api/requests?${query}`);
+    return fetchJson(`/api/requests${query ? `?${query}` : ''}`);
   },
   getAnalytics: () => fetchJson('/api/requests/analytics'),
 
@@ -76,3 +102,4 @@ export const apiService = {
     method,
   }),
 };
+

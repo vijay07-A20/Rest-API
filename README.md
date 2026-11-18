@@ -208,15 +208,19 @@ npm run dev
 5. Configure Environment Variables:
    - `NODE_ENV`: `production`
    - `PORT`: `10000`
-   - `CLIENT_ORIGIN`: `https://your-frontend.vercel.app`
+   - `CLIENT_ORIGIN`: the exact Vercel frontend origin from your deployment dashboard
    - `MONGODB_URI`: `mongodb+srv://<user>:<password>@cluster.mongodb.net/sentinel`
 
 ### B. Frontend Deployment (Vercel)
 1. Import the repository into Vercel.
 2. Root Directory: `frontend`
 3. Framework Preset: `Vite`
-4. Environment Variables:
-   - `VITE_API_URL`: `https://your-render-backend.onrender.com`
+4. In **Project Settings → Environment Variables**, add `VITE_API_URL` for **Production** (and Preview if you use preview deployments). Set its value to the origin of your deployed Render web service, using the URL shown in the Render dashboard. Use only the origin (scheme and host), with no `/api` suffix and no trailing slash; the frontend adds API paths itself.
+5. Redeploy the frontend after adding or changing the variable. Vite embeds `VITE_*` values at build time.
+
+The same `VITE_API_URL` value is used for all REST requests and the `/api/stream/events` SSE connection. The frontend does not proxy production API traffic through Vercel. In local development, leave the variable unset to use the Vite `/api` proxy to `http://localhost:5000`.
+
+On Render, set `CLIENT_ORIGIN` to the exact deployed Vercel frontend origin (for example, the production `https://…vercel.app` origin). If Render must allow multiple Vercel origins, provide a comma-separated list of exact origins. Do not include URL paths or trailing slashes.
 
 ---
 

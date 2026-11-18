@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { apiService } from '../services/api';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import { apiService, getApiUrl, API_CONFIG_ERROR } from '../services/api';
 
 export function useDashboardData(pollIntervalMs = 3000) {
   const [stats, setStats] = useState(null);
@@ -60,8 +60,14 @@ export function useDashboardData(pollIntervalMs = 3000) {
   // Connect Server-Sent Events (SSE) Stream
   useEffect(() => {
     let sse;
+    if (API_CONFIG_ERROR) {
+      console.error(`[API Configuration] ${API_CONFIG_ERROR}`);
+      setIsConnected(false);
+      return undefined;
+    }
+
     try {
-      sse = new EventSource('/api/stream/events');
+      sse = new EventSource(getApiUrl('/api/stream/events'));
       eventSourceRef.current = sse;
 
       sse.onopen = () => {
@@ -120,3 +126,5 @@ export function useDashboardData(pollIntervalMs = 3000) {
     refreshData,
   };
 }
+
+
